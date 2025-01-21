@@ -17,7 +17,13 @@ from PIL import Image
 from pydantic import BaseModel, model_validator
 
 from openparse.pdf import Pdf
-from openparse.schemas import Bbox, ImageElement, LineElement, TextElement, TextSpan
+from openparse.schemas import (
+    Bbox,
+    ImageElement,
+    LineElement,
+    TextElement,
+    TextSpan,
+)
 
 
 class CharElement(BaseModel):
@@ -52,7 +58,9 @@ def _extract_chars(text_line: LTTextLine) -> List[CharElement]:
     last_fontname = next(
         (char.fontname for char in text_line if isinstance(char, LTChar)), ""
     )
-    last_size = next((char.size for char in text_line if isinstance(char, LTChar)), 0.0)
+    last_size = next(
+        (char.size for char in text_line if isinstance(char, LTChar)), 0.0
+    )
 
     for char in text_line:
         if not isinstance(char, LTChar) and not isinstance(char, LTAnno):
@@ -61,7 +69,9 @@ def _extract_chars(text_line: LTTextLine) -> List[CharElement]:
             last_fontname = char.fontname
             last_size = char.size
         chars.append(
-            CharElement(text=char.get_text(), fontname=last_fontname, size=last_size)
+            CharElement(
+                text=char.get_text(), fontname=last_fontname, size=last_size
+            )
         )
 
     return chars
@@ -71,13 +81,15 @@ def _get_mime_type(pdf_object: LTImage) -> Optional[str]:
     """Determine the MIME type of an image in a PDF based on its filters."""
     # Resolve the stream attributes
     stream_attrs = pdf_object.stream.attrs
-    subtype = resolve1(stream_attrs.get("Subtype", ""))
+    _ = resolve1(stream_attrs.get("Subtype", ""))
     filters = resolve1(stream_attrs.get("Filter", ""))
 
     if isinstance(filters, list):
         filter_names = [str(f).lstrip("/").strip("\"'") for f in filters]
     else:
-        filter_names = [str(filters).lstrip("/").strip("\"'")] if filters else []
+        filter_names = (
+            [str(filters).lstrip("/").strip("\"'")] if filters else []
+        )
 
     mime_type = None
     if "DCTDecode" in filter_names:
@@ -250,9 +262,9 @@ def ingest(pdf_input: Pdf) -> List[Union[TextElement, ImageElement]]:
                             else:
                                 img_data = e.stream.get_data()
                             if img_data:
-                                base64_string = base64.b64encode(img_data).decode(
-                                    "utf-8"
-                                )
+                                base64_string = base64.b64encode(
+                                    img_data
+                                ).decode("utf-8")
                                 page_elements.append(
                                     ImageElement(
                                         bbox=Bbox(

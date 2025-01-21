@@ -25,7 +25,10 @@ class _TableCellModelOutput(BaseModel):
 
     @property
     def is_header(self) -> bool:
-        return self.label in ["table column header", "table projected row header"]
+        return self.label in [
+            "table column header",
+            "table projected row header",
+        ]
 
     @property
     def is_row(self) -> bool:
@@ -144,12 +147,16 @@ class _Table(BaseModel):
         Generates the string for a single row based on the cell contents and column widths.
         """
         row_content = "|".join(
-            " {} ".format(cell.content.ljust(width) if cell.content else " " * width)
+            " {} ".format(
+                cell.content.ljust(width) if cell.content else " " * width
+            )
             for cell, width in zip(cells, column_widths)
         )
         return f"|{row_content}|"
 
-    def _generate_horizontal_border_str(self, column_widths: List[int]) -> str:
+    def _generate_horizontal_border_str(
+        self, column_widths: List[int]
+    ) -> str:
         """
         Generates the horizontal border string based on the column widths.
         """
@@ -158,12 +165,17 @@ class _Table(BaseModel):
 
     def sort(self) -> None:
         self.headers.sort(
-            key=lambda header: (header.cells[0].bbox[1], header.cells[0].bbox[0])
+            key=lambda header: (
+                header.cells[0].bbox[1],
+                header.cells[0].bbox[0],
+            )
         )
         for header in self.headers:
             header.sort_cells()
 
-        self.rows.sort(key=lambda row: (row.cells[0].bbox[1], row.cells[0].bbox[0]))
+        self.rows.sort(
+            key=lambda row: (row.cells[0].bbox[1], row.cells[0].bbox[0])
+        )
         for row in self.rows:
             row.sort_cells()
 
@@ -187,12 +199,20 @@ class _Table(BaseModel):
         table_str = self._generate_horizontal_border_str(column_widths) + "\n"
 
         for header in self.headers:
-            table_str += self._generate_row_str(header.cells, column_widths) + "\n"
-            table_str += self._generate_horizontal_border_str(column_widths) + "\n"
+            table_str += (
+                self._generate_row_str(header.cells, column_widths) + "\n"
+            )
+            table_str += (
+                self._generate_horizontal_border_str(column_widths) + "\n"
+            )
 
         for row in self.rows:
-            table_str += self._generate_row_str(row.cells, column_widths) + "\n"
-            table_str += self._generate_horizontal_border_str(column_widths) + "\n"
+            table_str += (
+                self._generate_row_str(row.cells, column_widths) + "\n"
+            )
+            table_str += (
+                self._generate_horizontal_border_str(column_widths) + "\n"
+            )
 
         return table_str.rstrip()
 
@@ -224,9 +244,7 @@ class _Table(BaseModel):
             html_str += "<tr>\n"
             for cell in row.cells:  # type: ignore
                 min_width = round(cell.bbox[2] - cell.bbox[0])
-                html_str += (
-                    f'<td style="min-width:{min_width}px;">{cell.content or ""}</td>\n'
-                )
+                html_str += f'<td style="min-width:{min_width}px;">{cell.content or ""}</td>\n'
             html_str += "</tr>\n"
         html_str += "</tbody>\n"
 
@@ -246,7 +264,11 @@ class _Table(BaseModel):
                 header_row = (
                     "| "
                     + " | ".join(
-                        cell.content.ljust(width) if cell.content else " " * width
+                        (
+                            cell.content.ljust(width)
+                            if cell.content
+                            else " " * width
+                        )
                         for cell, width in zip(header.cells, column_widths)
                     )
                     + " |"
@@ -254,7 +276,9 @@ class _Table(BaseModel):
                 markdown_str += header_row + "\n"
 
                 separator_row = (
-                    "|:" + ":|:".join("-" * width for width in column_widths) + ":|"
+                    "|:"
+                    + ":|:".join("-" * width for width in column_widths)
+                    + ":|"
                 )
                 markdown_str += separator_row + "\n"
 

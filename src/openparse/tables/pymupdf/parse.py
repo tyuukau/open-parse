@@ -33,7 +33,8 @@ def output_to_markdown(headers: List[str], rows: List[List[str]]) -> str:
 
     for row in rows:
         processed_row = [
-            " " if cell in [None, ""] else cell.replace("\n", " ") for cell in row
+            " " if cell in [None, ""] else cell.replace("\n", " ")
+            for cell in row
         ]
         markdown_output += "| " + " | ".join(processed_row) + " |\n"
 
@@ -41,7 +42,8 @@ def output_to_markdown(headers: List[str], rows: List[List[str]]) -> str:
 
 
 def combine_header_and_table_bboxes(
-    bbox1: Tuple[float, float, float, float], bbox2: Tuple[float, float, float, float]
+    bbox1: Tuple[float, float, float, float],
+    bbox2: Tuple[float, float, float, float],
 ) -> Tuple[float, float, float, float]:
     x0 = min(bbox1[0], bbox2[0])
     y0 = min(bbox1[1], bbox2[1])

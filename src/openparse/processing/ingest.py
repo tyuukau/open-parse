@@ -101,10 +101,19 @@ class SemanticIngestionPipeline(IngestionPipeline):
         self,
         openai_api_key: str,
         model: EmbeddingModel = "text-embedding-3-large",
+        use_azure: bool = False,
+        api_version: str = None,
+        azure_endpoint: str = None,
         min_tokens: int = consts.TOKENIZATION_LOWER_LIMIT,
         max_tokens: int = consts.TOKENIZATION_UPPER_LIMIT,
     ) -> None:
-        embedding_client = OpenAIEmbeddings(api_key=openai_api_key, model=model)
+        embedding_client = OpenAIEmbeddings(
+            model=model,
+            api_key=openai_api_key,
+            use_azure=use_azure,
+            api_version=api_version,
+            azure_endpoint=azure_endpoint,
+        )
 
         self.transformations = [
             RemoveTextInsideTables(),

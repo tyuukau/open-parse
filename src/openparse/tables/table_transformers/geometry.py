@@ -11,7 +11,9 @@ def calc_bbox_intersection(bbox1, bbox2, safety_margin=5.0):
         or bbox2[2] <= bbox2[0]
         or bbox2[3] <= bbox2[1]
     ):
-        raise ValueError("Bounding boxes must have non-zero width and height.")
+        raise ValueError(
+            "Bounding boxes must have non-zero width and height."
+        )
 
     # Expand bounding boxes
     x1_expanded_min = min(bbox1[0], bbox2[0]) - safety_margin

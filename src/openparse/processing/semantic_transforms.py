@@ -7,7 +7,9 @@ from openparse.schemas import Node
 from .basic_transforms import ProcessingStep
 
 EmbeddingModel = Literal[
-    "text-embedding-3-large", "text-embedding-3-small", "text-embedding-ada-002"
+    "text-embedding-3-large",
+    "text-embedding-3-small",
+    "text-embedding-ada-002",
 ]
 
 
@@ -22,6 +24,9 @@ class OpenAIEmbeddings:
         self,
         model: EmbeddingModel,
         api_key: str,
+        use_azure: bool = False,
+        api_version: str = None,
+        azure_endpoint: str = None,
         batch_size: int = 256,
     ):
         """
@@ -33,6 +38,16 @@ class OpenAIEmbeddings:
             batch_size (int): The number of texts to process in each api call.
         """
         self.api_key = api_key
+        self.use_azure = use_azure
+        self.api_version = api_version
+        self.azure_endpoint = azure_endpoint
+
+        if self.use_azure:
+            if not self.azure_endpoint or not self.api_version:
+                raise ValueError(
+                    "Both azure_endpoint and api_version must be provided when use_azure is True."
+                )
+
         self.model = model
         self.batch_size = batch_size
         self.client = self._create_client()
@@ -53,19 +68,27 @@ class OpenAIEmbeddings:
 
         # Map results back to original indices, adding zero embeddings for empty texts
         final_res = [
-            [0.0] * embedding_size if not text else res.pop(0) for text in texts
+            [0.0] * embedding_size if not text else res.pop(0)
+            for text in texts
         ]
 
         return final_res
 
     def _create_client(self):
         try:
-            from openai import OpenAI
+            from openai import OpenAI, AzureOpenAI
         except ImportError as err:
             raise ImportError(
                 "You need to install the openai package to use this feature."
             ) from err
-        return OpenAI(api_key=self.api_key)
+        if self.use_azure:
+            return AzureOpenAI(
+                api_key=self.api_key,
+                api_version=self.api_version,
+                azure_endpoint=self.azure_endpoint,
+            )
+        else:
+            return OpenAI(api_key=self.api_key)
 
 
 class CombineNodesSemantically(ProcessingStep):
@@ -89,18 +112,25 @@ class CombineNodesSemantically(ProcessingStep):
             modified = False
             nodes = sorted(nodes)
 
-            embeddings = self.embedding_client.embed_many([node.text for node in nodes])
+            embeddings = self.embedding_client.embed_many(
+                [node.text for node in nodes]
+            )
             i = 0
 
             while i < len(nodes) - 1:
                 current_embedding = embeddings[i]
                 next_embedding = embeddings[i + 1]
-                similarity = cosine_similarity(current_embedding, next_embedding)
+                similarity = cosine_similarity(
+                    current_embedding, next_embedding
+                )
                 is_within_token_limit = (
                     nodes[i].tokens + nodes[i + 1].tokens <= self.max_tokens
                 )
 
-                if similarity >= self.min_similarity and is_within_token_limit:
+                if (
+                    similarity >= self.min_similarity
+                    and is_within_token_limit
+                ):
                     nodes[i] = nodes[i] + nodes[i + 1]
                     del nodes[i + 1]
                     del embeddings[i + 1]
@@ -115,10 +145,14 @@ class CombineNodesSemantically(ProcessingStep):
         """
         Get the similarity of each node with the node that precedes it
         """
-        embeddings = self.embedding_client.embed_many([node.text for node in nodes])
+        embeddings = self.embedding_client.embed_many(
+            [node.text for node in nodes]
+        )
 
         similarities = []
         for i in range(1, len(embeddings)):
-            similarities.append(cosine_similarity(embeddings[i - 1], embeddings[i]))
+            similarities.append(
+                cosine_similarity(embeddings[i - 1], embeddings[i])
+            )
 
         return [0] + similarities
